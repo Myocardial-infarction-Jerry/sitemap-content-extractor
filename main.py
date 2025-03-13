@@ -43,40 +43,43 @@ def detect_encoding(content):
     return content.decode(encoding, errors="ignore")
 
 
-def fetch_article(url, headers, rp):
-    """Fetch a single article and save it as an HTML file with error handling."""
+def fetch_article(url, headers, rp, retries=3):
+    """Fetch a single article and save it as an HTML file with error handling and retries."""
     if not is_allowed(rp, url, headers["User-Agent"]):
         print(f"[INFO] Skipping disallowed URL: {url}")
         return None
 
-    try:
-        parsed_url = urlparse(url)
-        clean_url = parsed_url.scheme + "://" + parsed_url.netloc + parsed_url.path
+    for attempt in range(retries):
+        try:
+            parsed_url = urlparse(url)
+            clean_url = parsed_url.scheme + "://" + parsed_url.netloc + parsed_url.path
 
-        article_response = requests.get(clean_url, headers=headers, timeout=10)
-        article_response.raise_for_status()
+            article_response = requests.get(clean_url, headers=headers, timeout=10)
+            article_response.raise_for_status()
 
-        if "text/html" not in article_response.headers.get("Content-Type", ""):
-            print(f"[WARNING] Skipped non-HTML content: {url}")
-            return None
+            if "text/html" not in article_response.headers.get("Content-Type", ""):
+                print(f"[WARNING] Skipped non-HTML content: {url}")
+                return None
 
-        decoded_html = detect_encoding(article_response.content)
-        soup = BeautifulSoup(decoded_html, "html.parser")
-        pretty_html = soup.prettify()
+            decoded_html = detect_encoding(article_response.content)
+            soup = BeautifulSoup(decoded_html, "html.parser")
+            pretty_html = soup.prettify()
 
-        file_name = parsed_url.path.strip("/").replace("/", "_") or "index"
-        file_name = file_name + ".html"
-        file_path = os.path.join("articles", file_name)
+            file_name = parsed_url.path.strip("/").replace("/", "_") or "index"
+            file_name = file_name + ".html"
+            file_path = os.path.join("articles", file_name)
 
-        with open(file_path, "w", encoding="utf-8") as file:
-            file.write(pretty_html)
+            with open(file_path, "w", encoding="utf-8") as file:
+                file.write(pretty_html)
 
-        print(f"[SUCCESS] Saved: {file_name}")
-        return file_name
-    except requests.RequestException as e:
-        print(f"[ERROR] Error fetching {url}: {e}")
-    except Exception as e:
-        print(f"[ERROR] Unexpected error processing {url}: {e}")
+            print(f"[SUCCESS] Saved: {file_name}")
+            return file_name
+        except requests.RequestException as e:
+            print(f"[ERROR] Error fetching {url} (attempt {attempt + 1}/{retries}): {e}")
+            time.sleep(2 ** attempt)  # Exponential backoff
+        except Exception as e:
+            print(f"[ERROR] Unexpected error processing {url}: {e}")
+            break
     return None
 
 
