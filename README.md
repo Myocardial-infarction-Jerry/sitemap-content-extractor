@@ -41,3 +41,24 @@ python main.py https://example.com
 ```
 
 This will output the URLs listed in `https://example.com/sitemap.xml`, save the content of those URLs as HTML files in the `articles` directory, and convert them to Markdown format.
+
+## Using match.py
+
+1. Install the `ollama` package:
+    ```sh
+    pip install ollama
+    ```
+
+2. Pull the required model for embedding:
+    ```sh
+    ollama pull nomic-embed-text
+    ```
+
+3. Run the `match.py` script:
+    ```sh
+    python match.py
+    ```
+
+    This script will read all `.md` files from the `texts/` directory, embed their content along with the specified keywords, and sort the files based on their relevance to the keywords.
+
+4. The sorted files along with their relevance scores will be printed to the console.
