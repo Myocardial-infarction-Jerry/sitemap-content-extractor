@@ -2,6 +2,7 @@ import requests
 import xml.etree.ElementTree as ET
 import os
 import time
+import sys
 from urllib.robotparser import RobotFileParser
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
@@ -54,7 +55,8 @@ def fetch_article(url, headers, rp, retries=3):
             parsed_url = urlparse(url)
             clean_url = parsed_url.scheme + "://" + parsed_url.netloc + parsed_url.path
 
-            article_response = requests.get(clean_url, headers=headers, timeout=10)
+            article_response = requests.get(
+                clean_url, headers=headers, timeout=10)
             article_response.raise_for_status()
 
             if "text/html" not in article_response.headers.get("Content-Type", ""):
@@ -75,7 +77,8 @@ def fetch_article(url, headers, rp, retries=3):
             print(f"[SUCCESS] Saved: {file_name}")
             return file_name
         except requests.RequestException as e:
-            print(f"[ERROR] Error fetching {url} (attempt {attempt + 1}/{retries}): {e}")
+            print(
+                f"[ERROR] Error fetching {url} (attempt {attempt + 1}/{retries}): {e}")
             time.sleep(2 ** attempt)  # Exponential backoff
         except Exception as e:
             print(f"[ERROR] Unexpected error processing {url}: {e}")
@@ -149,9 +152,7 @@ def convert_html_to_markdown():
                 print(f"[ERROR] Failed to convert {file_name}: {e}")
 
 
-def main_fetch():
-    sitemap_url = "https://butlr.com/sitemap.xml"
-    robots_url = "https://butlr.com/robots.txt"
+def main_fetch(sitemap_url, robots_url):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
     }
@@ -175,5 +176,13 @@ def main_convert():
 
 
 if __name__ == "__main__":
-    main_fetch()
+    if len(sys.argv) != 2:
+        print("Usage: python main.py <base_url>")
+        sys.exit(1)
+
+    base_url = sys.argv[1]
+    sitemap_url = f"{base_url.rstrip('/')}/sitemap.xml"
+    robots_url = f"{base_url.rstrip('/')}/robots.txt"
+
+    main_fetch(sitemap_url, robots_url)
     main_convert()
