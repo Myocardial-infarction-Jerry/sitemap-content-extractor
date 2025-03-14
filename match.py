@@ -17,37 +17,34 @@ def read_md_files(directory):
 def embed_texts_and_keywords(files, keywords):
     """Function to embed a list of texts (i.e., content of .md files) and keywords"""
     # Embed the keywords
-    keyword_embeddings = [embed(
-        model='nomic-embed-text', input=keyword)['embeddings'] for keyword in keywords]
-    keyword_embeddings = [embedding[0]
-                          for embedding in keyword_embeddings]  # Flatten the embedding to 2D
+    keyword_embeddings = [
+        embed(model='nomic-embed-text', input=keyword)['embeddings'][0]
+        for keyword in keywords
+    ]
 
     # Embed all the .md files
     file_embeddings = {}
     for filename, content in files.items():
         file_embedding = embed(model='nomic-embed-text',
-                               input=content)['embeddings']
-        # Flatten the embedding to 2D
-        file_embeddings[filename] = file_embedding[0]
+                               input=content)['embeddings'][0]
+        file_embeddings[filename] = file_embedding
 
     return keyword_embeddings, file_embeddings
 
 
-def sort_files_by_relevance(files, keyword_embeddings):
+def sort_files_by_relevance(files, keywords):
     """Function to sort the files based on their relevance to the keywords"""
     # Embed files and keywords
     keyword_embeddings, file_embeddings = embed_texts_and_keywords(
-        files, keyword_embeddings)
+        files, keywords)
 
     # Calculate similarity between keywords and each file's embedding
     similarity_scores = {}
     for filename, file_embedding in file_embeddings.items():
-        file_relevance = 0
-        # Calculate relevance for each keyword and sum the similarities
-        for keyword_embedding in keyword_embeddings:
-            similarity = cosine_similarity([keyword_embedding], [file_embedding])[
-                0][0]  # Flatten result
-            file_relevance += similarity
+        file_relevance = sum(
+            cosine_similarity([keyword_embedding], [file_embedding])[0][0]
+            for keyword_embedding in keyword_embeddings
+        )
 
         # Store total relevance score for the file
         similarity_scores[filename] = file_relevance
@@ -67,7 +64,7 @@ if __name__ == '__main__':
     files = read_md_files(directory)
 
     # Hardcoded keywords (you can adjust or add more keywords as needed)
-    keywords = ['fall detect']
+    keywords = ['Qualcomm Ventures']
 
     # Sort the files by relevance to the keywords
     sorted_files = sort_files_by_relevance(files, keywords)
