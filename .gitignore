@@ -12,3 +12,6 @@ texts/
 
 # Visual Studio Code settings
 .vscode/
+
+# Sitemap
+sitemap.xml

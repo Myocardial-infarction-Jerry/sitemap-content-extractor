@@ -30,10 +30,6 @@ def detect_encoding(content):
 
 def fetch_article(url, headers, rp, retries=3):
     """Fetch and save an article as an HTML file."""
-    if not rp.can_fetch(headers["User-Agent"], url):
-        print(f"[INFO] Skipping disallowed URL: {url}")
-        return None
-
     for attempt in range(retries):
         try:
             response = requests.get(url, headers=headers, timeout=10)
@@ -41,7 +37,7 @@ def fetch_article(url, headers, rp, retries=3):
 
             if "text/html" not in response.headers.get("Content-Type", ""):
                 print(f"[WARNING] Skipped non-HTML content: {url}")
-                return None
+                return None, None
 
             decoded_html = detect_encoding(response.content)
             soup = BeautifulSoup(decoded_html, "html.parser")
@@ -53,7 +49,7 @@ def fetch_article(url, headers, rp, retries=3):
             with open(file_path, "w", encoding="utf-8") as file:
                 file.write(soup.prettify())
 
-            print(f"[SUCCESS] Saved: {file_name}")
+            print(f"[SUCCESS] Saved: {url}")
             return file_name, soup
         except requests.RequestException as e:
             print(
@@ -62,32 +58,44 @@ def fetch_article(url, headers, rp, retries=3):
     return None, None
 
 
+def normalize_url(url):
+    """Normalize URL by removing fragmen."""
+    parsed_url = urlparse(url)
+    if parsed_url.path.endswith('/'):
+        parsed_url = parsed_url._replace(path=parsed_url.path[:-1])
+    return parsed_url._replace(fragment='').geturl()
+
+
 def extract_links(base_url, rp, headers):
     """Recursively extract allowed links from the website cluster."""
     visited = set()
-    to_visit = {base_url}
-    all_links = set()
+    to_visit = {normalize_url(base_url)}
 
     while to_visit:
         url = to_visit.pop()
+        url = normalize_url(url)  # Normalize URL by removing fragment
         if url in visited:
             continue
 
-        visited.add(url)
+        if urlparse(url).scheme != "https":
+            print(f"[INFO] Skipped non-HTTPS URL: {url}")
+            continue
+
         file_name, soup = fetch_article(url, headers, rp)
         if not soup:
             continue
 
+        visited.add(url)
+
         links = {urljoin(url, link["href"])
                  for link in soup.find_all("a", href=True)}
         for link in links:
-            parsed_link = urlparse(link)
-            if parsed_link.netloc == urlparse(base_url).netloc and rp.can_fetch(headers["User-Agent"], link):
-                if link not in visited:
-                    to_visit.add(link)
-                all_links.add(link)
+            normalized_link = normalize_url(link)  # Normalize link
+            if urlparse(normalized_link).netloc == urlparse(base_url).netloc and rp.can_fetch(headers["User-Agent"], normalized_link):
+                if normalized_link not in visited:
+                    to_visit.add(normalized_link)
 
-    return list(all_links)
+    return list(visited)
 
 
 def determine_priority(url):
