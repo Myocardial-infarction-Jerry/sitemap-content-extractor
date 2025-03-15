@@ -42,6 +42,17 @@ python main.py https://example.com
 
 This will output the URLs listed in `https://example.com/sitemap.xml`, save the content of those URLs as HTML files in the `articles` directory, and convert them to Markdown format.
 
+## Using sitemap.py
+
+1. Run the `sitemap.py` script:
+    ```sh
+    python sitemap.py <base_url>
+    ```
+
+    Replace `<base_url>` with the base URL of the website. This script will fetch the sitemap, extract the URLs, and save them to a file named `sitemap_urls.txt` in the project directory.
+
+2. The extracted URLs will be saved in `sitemap_urls.txt` for further processing or analysis.
+
 ## Using match.py
 
 1. Install the `ollama` package:
@@ -62,3 +73,5 @@ This will output the URLs listed in `https://example.com/sitemap.xml`, save the 
     This script will read all `.md` files from the `texts/` directory, embed their content along with the specified keywords, and sort the files based on their relevance to the keywords.
 
 4. The sorted files along with their relevance scores will be printed to the console.
+
+
