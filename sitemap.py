@@ -58,8 +58,9 @@ def fetch_article(url, headers, rp, retries=3):
     return None, None
 
 
-def normalize_url(url):
+def normalize_url(original_url):
     """Normalize URL by removing fragmen."""
+    url = requests.head(original_url, allow_redirects=True).url
     parsed_url = urlparse(url)
     if parsed_url.path.endswith('/'):
         parsed_url = parsed_url._replace(path=parsed_url.path[:-1])
@@ -130,6 +131,12 @@ def generate_sitemap(urls):
         file.write(formatted_xml + "\n")
 
     print(f"[SUCCESS] Generated sitemap: {sitemap_path}")
+
+    # Export URLs to sitemap_urls.txt
+    with open("sitemap_urls.txt", "w", encoding="utf-8") as file:
+        for url in urls:
+            file.write(url + "\n")
+    print(f"[SUCCESS] Exported URLs to sitemap_urls.txt")
 
 
 def main():
