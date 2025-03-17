@@ -50,6 +50,8 @@ def sort_files_by_relevance(files, keywords):
         similarity_scores[filename] = file_relevance
 
     # Sort files by their total relevance score in descending order (higher relevance comes first)
+    similarity_scores = {k: v / len(keywords)
+                         for k, v in similarity_scores.items()}
     sorted_files = sorted(similarity_scores.items(),
                           key=lambda item: item[1], reverse=True)
 
@@ -64,7 +66,7 @@ if __name__ == '__main__':
     files = read_md_files(directory)
 
     # Hardcoded keywords (you can adjust or add more keywords as needed)
-    keywords = ['Qualcomm Ventures']
+    keywords = ['occupancy sensors']
 
     # Sort the files by relevance to the keywords
     sorted_files = sort_files_by_relevance(files, keywords)
